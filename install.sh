@@ -1394,22 +1394,26 @@ test_server_a() {
     echo ""
     
     # Test 2: TCP connectivity to paqet port
-    print_step "Test 2: TCP connectivity to Server B port $server_port..."
+    # NOTE: paqet uses raw sockets, so standard TCP probes won't get a response
+    # This is EXPECTED - paqet is designed to be invisible to normal TCP
+    print_step "Test 2: TCP probe to Server B port $server_port..."
+    print_info "Note: paqet uses raw sockets - standard TCP may not respond"
+    
+    local tcp_reachable=false
     if timeout 5 bash -c "echo >/dev/tcp/$server_ip/$server_port" 2>/dev/null; then
-        print_success "Port $server_port is reachable"
-    else
-        # Try with nc if available
-        if command -v nc >/dev/null 2>&1; then
-            if nc -z -w 5 "$server_ip" "$server_port" 2>/dev/null; then
-                print_success "Port $server_port is reachable"
-            else
-                print_error "Cannot reach Server B on port $server_port"
-                print_info "Check: 1) Server B paqet is running 2) Firewall allows port $server_port"
-            fi
-        else
-            print_warning "Cannot test TCP (nc not available)"
-            print_info "Install netcat: apt install netcat-openbsd"
+        tcp_reachable=true
+    elif command -v nc >/dev/null 2>&1; then
+        if nc -z -w 5 "$server_ip" "$server_port" 2>/dev/null; then
+            tcp_reachable=true
         fi
+    fi
+    
+    if [ "$tcp_reachable" = true ]; then
+        print_success "Port $server_port responds to TCP (unusual for paqet)"
+    else
+        print_warning "No TCP response on port $server_port"
+        print_info "This is NORMAL - paqet operates at raw socket level"
+        print_info "The tunnel may still work. Run end-to-end test to verify."
     fi
     
     echo ""
@@ -1461,7 +1465,8 @@ test_server_a() {
     echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
     echo -e "${YELLOW}Server A Checklist:${NC}"
     echo -e "  • Verify secret key matches Server B"
-    echo -e "  • Ensure Server B's paqet port is reachable"
+    echo -e "  • Ensure Server B's cloud firewall allows port $server_port"
+    echo -e "  • TCP probe failing is NORMAL (paqet uses raw sockets)"
     echo -e "  • Update V2Ray clients to use this server's IP"
     echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
 }
