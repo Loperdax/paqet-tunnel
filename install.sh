@@ -11,7 +11,7 @@
 set -e
 
 # Configuration
-INSTALLER_VERSION="1.4.0"
+INSTALLER_VERSION="1.5.0"
 PAQET_VERSION="latest"
 PAQET_DIR="/opt/paqet"
 PAQET_CONFIG="$PAQET_DIR/config.yaml"
@@ -421,6 +421,60 @@ check_port_conflict() {
 #===============================================================================
 # Installation Functions
 #===============================================================================
+
+# Iran server network optimization (DNS + apt mirror selection)
+run_iran_optimizations() {
+    echo ""
+    echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}          Iran Server Network Optimization                  ${NC}"
+    echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo -e "${CYAN}These scripts can help optimize your Iran server:${NC}"
+    echo -e "  ${YELLOW}1.${NC} DNS Finder - Find the best DNS servers for Iran"
+    echo -e "  ${YELLOW}2.${NC} Mirror Selector - Find the fastest apt repository mirror"
+    echo ""
+    echo -e "${CYAN}This can significantly improve download speeds and reliability.${NC}"
+    echo ""
+    
+    read_confirm "Run network optimization scripts before installation?" run_optimize "y"
+    
+    if [ "$run_optimize" = true ]; then
+        echo ""
+        
+        # Run DNS optimization
+        print_step "Running DNS Finder..."
+        print_info "This will find and configure the best DNS for Iran"
+        echo ""
+        if bash <(curl -Ls https://github.com/alinezamifar/IranDNSFinder/raw/refs/heads/main/dns.sh); then
+            print_success "DNS optimization completed"
+        else
+            print_warning "DNS optimization failed or was skipped"
+        fi
+        
+        echo ""
+        
+        # Run apt mirror optimization (only for Debian/Ubuntu)
+        local os=$(detect_os)
+        if [[ "$os" == "ubuntu" ]] || [[ "$os" == "debian" ]]; then
+            print_step "Running Ubuntu/Debian Mirror Selector..."
+            print_info "This will find the fastest apt repository mirror"
+            echo ""
+            if bash <(curl -Ls https://github.com/alinezamifar/DetectUbuntuMirror/raw/refs/heads/main/DUM.sh); then
+                print_success "Mirror optimization completed"
+            else
+                print_warning "Mirror optimization failed or was skipped"
+            fi
+        else
+            print_info "Mirror selector is only available for Ubuntu/Debian"
+        fi
+        
+        echo ""
+        print_success "Network optimization completed!"
+        echo ""
+    else
+        print_info "Skipping network optimization"
+    fi
+}
 
 install_dependencies() {
     print_step "Installing dependencies..."
@@ -1621,7 +1675,7 @@ main() {
         
         case $choice in
             1) install_dependencies; setup_server_b ;;
-            2) install_dependencies; setup_server_a ;;
+            2) run_iran_optimizations; install_dependencies; setup_server_a ;;
             3) check_status ;;
             4) view_config ;;
             5) edit_config ;;
