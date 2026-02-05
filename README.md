@@ -2,11 +2,12 @@
 
 Easy installer for tunneling VPN traffic through a middle server using [paqet](https://github.com/hanselime/paqet) - a raw packet-level tunneling tool that bypasses network restrictions.
 
-**Current Version:** v1.5.1
+**Current Version:** v1.6.0
 
 ## Features
 
 - **Interactive Setup** - Guided installation for both Iran and abroad servers
+- **Install as Command** - Run `paqet-tunnel` after installing
 - **Input Validation** - Won't exit on invalid input, keeps asking until valid
 - **Iran Network Optimization** - Optional DNS and apt mirror optimization for Iran servers
 - **Configuration Editor** - Change ports, keys, KCP settings, and MTU without manual file editing
@@ -21,6 +22,7 @@ This tool is designed for users in **Iran** (or other restricted regions) who ne
 ## Overview
 
 paqet uses raw TCP packet injection to create a tunnel that:
+
 - Bypasses kernel-level connection tracking (conntrack)
 - Uses KCP protocol for encrypted, reliable transport
 - Is much harder to detect than SSH or VPN protocols
@@ -45,10 +47,12 @@ paqet uses raw TCP packet injection to create a tunnel that:
 ```
 
 **Servers:**
+
 - **Server A (Iran)**: Entry point server located in Iran - clients connect here
 - **Server B (Abroad)**: Your VPN server abroad (USA, Germany, etc.) running V2Ray/X-UI
 
 **Traffic Flow:**
+
 1. Client connects to Server A (Iran) on the V2Ray port
 2. Server A tunnels traffic through paqet to Server B (Abroad)
 3. Server B forwards to local V2Ray (`127.0.0.1:PORT`)
@@ -60,6 +64,17 @@ paqet uses raw TCP packet injection to create a tunnel that:
 # Run on both servers (as root)
 bash <(curl -fsSL https://raw.githubusercontent.com/g3ntrix/paqet-tunnel/main/install.sh)
 ```
+
+### Install as Command (Optional)
+
+After running the script, select option **i** to install `paqet-tunnel` as a system command:
+
+```bash
+# After installation, you can simply run:
+paqet-tunnel
+```
+
+This installs the script to `/usr/local/bin/paqet-tunnel` so you can run it anytime without curl.
 
 ## Installation Steps
 
@@ -110,6 +125,7 @@ Run network optimization scripts before installation? (Y/n):
 ```
 
 This runs:
+
 - [IranDNSFinder](https://github.com/alinezamifar/IranDNSFinder) - Finds and configures optimal DNS servers
 - [DetectUbuntuMirror](https://github.com/alinezamifar/DetectUbuntuMirror) - Selects the fastest apt mirror (Ubuntu/Debian only)
 
@@ -132,6 +148,7 @@ Only change the IP address - everything else stays the same!
 On **Server B (Abroad)**, your V2Ray/X-UI inbound **MUST** listen on `0.0.0.0` (all interfaces), not just the public IP or empty.
 
 In X-UI Panel:
+
 1. Go to **Inbounds** → Edit your inbound
 2. Set **Listen IP** to: `0.0.0.0`
 3. Save and restart X-UI
@@ -167,6 +184,7 @@ On **both servers**, run the installer and choose:
 - Then **Option 3** → **KCP Settings**
 
 You can adjust:
+
 - **Mode**: `normal`, `fast`, `fast2`, `fast3`
 - **Connections**: number of parallel KCP connections
 - **MTU**: default `1350` (try `1280-1300` on problematic networks)
@@ -190,6 +208,7 @@ transport:
 ```
 
 Then restart both services:
+
 ```bash
 systemctl restart paqet
 ```
@@ -212,13 +231,18 @@ The installer provides a full management interface:
 ── Maintenance ──
 7) Check for Updates
 8) Show Port Defaults
-9) Uninstall
+9) Uninstall paqet
+
+── Script ──
+i) Install as 'paqet-tunnel' command
+r) Remove paqet-tunnel command
 0) Exit
 ```
 
 ### Edit Configuration (Option 5)
 
 Change settings without manually editing config files:
+
 - **Ports** - Change paqet or forwarded ports
 - **Secret Key** - Generate or set a new key
 - **KCP Settings** - Adjust mode (normal/fast/fast2/fast3) and connections
@@ -230,6 +254,7 @@ Change settings without manually editing config files:
 Built-in diagnostics that automatically detect your server role and run appropriate tests:
 
 **Server A (Iran) tests:**
+
 - Service status check
 - Network connectivity to Server B
 - Forwarded ports verification
@@ -237,6 +262,7 @@ Built-in diagnostics that automatically detect your server role and run appropri
 - End-to-end tunnel test
 
 **Server B (Abroad) tests:**
+
 - Service status check
 - Listening port verification
 - iptables rules check
@@ -248,6 +274,7 @@ Built-in diagnostics that automatically detect your server role and run appropri
 ### Check for Updates (Option 7)
 
 The installer can update itself:
+
 - Checks GitHub for the latest version
 - Compares with current version
 - Downloads and launches the new version automatically
@@ -281,17 +308,20 @@ cat /opt/paqet/config.yaml
 
 ## How paqet Works
 
-| Feature | Description |
-|---------|-------------|
-| **Raw Packets** | Injects TCP packets directly, bypassing OS networking |
-| **Kernel Bypass** | Uses pcap library to bypass conntrack |
-| **KCP Protocol** | Encrypted, reliable transport layer |
-| **RST Blocking** | Drops kernel RST packets via iptables |
-| **No Handshake** | No identifiable protocol signature |
+
+| Feature           | Description                                           |
+| ----------------- | ----------------------------------------------------- |
+| **Raw Packets**   | Injects TCP packets directly, bypassing OS networking |
+| **Kernel Bypass** | Uses pcap library to bypass conntrack                 |
+| **KCP Protocol**  | Encrypted, reliable transport layer                   |
+| **RST Blocking**  | Drops kernel RST packets via iptables                 |
+| **No Handshake**  | No identifiable protocol signature                    |
+
 
 ## Troubleshooting
 
 **Connection timeout:**
+
 - Verify secret keys match exactly on both servers
 - Check iptables rules: `iptables -t raw -L -n`
 - Ensure cloud firewall allows the paqet port (8888)
@@ -299,29 +329,35 @@ cat /opt/paqet/config.yaml
 - Run the **Test Connection** tool (option 6) for diagnostics
 
 **Download blocked in Iran:**
+
 - Run the **Iran Network Optimization** when prompted during Server A setup
 - Download paqet manually from [releases](https://github.com/hanselime/paqet/releases)
 - Installer will prompt for local file path
 
 **Port already in use:**
+
 - Installer will detect this and offer to kill the process
 
 **Service not starting:**
+
 - Check logs: `journalctl -u paqet -n 50`
 - Verify config: `cat /opt/paqet/config.yaml`
 
 **Slow speed:**
+
 - Apply performance optimizations above
 - Try increasing `conn` to 8 (use Edit Configuration, option 5)
 - Check server CPU/bandwidth limits
 
 **Clients can't connect:**
+
 - Verify V2Ray inbound listens on `0.0.0.0`
 - Verify Server A's firewall allows the forwarded ports
 - Check both paqet services are running
 - Use **Test Connection** (option 6) to diagnose
 
 **TCP probe shows "no response":**
+
 - This is **normal** for paqet - it uses raw sockets
 - Run the end-to-end test in Test Connection to verify the tunnel works
 
@@ -332,3 +368,4 @@ MIT License
 ## Credits
 
 - [paqet](https://github.com/hanselime/paqet) - Raw packet tunneling library by hanselime
+

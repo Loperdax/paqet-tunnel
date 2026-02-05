@@ -11,7 +11,7 @@
 set -e
 
 # Configuration
-INSTALLER_VERSION="1.5.1"
+INSTALLER_VERSION="1.6.0"
 PAQET_VERSION="latest"
 PAQET_DIR="/opt/paqet"
 PAQET_CONFIG="$PAQET_DIR/config.yaml"
@@ -19,6 +19,7 @@ PAQET_BIN="$PAQET_DIR/paqet"
 PAQET_SERVICE="paqet"
 GITHUB_REPO="hanselime/paqet"
 INSTALLER_REPO="g3ntrix/paqet-tunnel"
+INSTALLER_CMD="/usr/local/bin/paqet-tunnel"
 
 #===============================================================================
 # Default Port Configuration (Easy to change)
@@ -1070,14 +1071,22 @@ uninstall() {
     
     # Ask about config preservation
     echo ""
-    echo -e "${YELLOW}Remove configuration and binary? (y/n)${NC}"
-    read -p "> " remove_all < /dev/tty
+    read_confirm "Remove configuration and binary?" remove_all "n"
     
-    if [[ "$remove_all" =~ ^[Yy]$ ]]; then
+    if [ "$remove_all" = true ]; then
         rm -rf "$PAQET_DIR"
-        print_success "All files removed"
+        print_success "All paqet files removed"
     else
         print_warning "Configuration preserved at: $PAQET_CONFIG"
+    fi
+    
+    # Ask about removing the command
+    if is_command_installed; then
+        echo ""
+        read_confirm "Also remove 'paqet-tunnel' command?" remove_cmd "n"
+        if [ "$remove_cmd" = true ]; then
+            uninstall_command
+        fi
     fi
     
     echo ""
@@ -1680,6 +1689,78 @@ show_port_config() {
 }
 
 #===============================================================================
+# Install/Uninstall Script as Command
+#===============================================================================
+
+install_command() {
+    print_step "Installing paqet-tunnel command..."
+    
+    # Download latest script from GitHub
+    local temp_script="/tmp/paqet-tunnel-install.sh"
+    local download_url="https://raw.githubusercontent.com/${INSTALLER_REPO}/main/install.sh"
+    
+    # Check if we're running from the installed location
+    if [ -f "$INSTALLER_CMD" ]; then
+        # Already installed, just update
+        print_info "Updating existing installation..."
+    fi
+    
+    # Try to download latest version
+    if curl -fsSL "$download_url" -o "$temp_script" 2>/dev/null; then
+        chmod +x "$temp_script"
+        mv "$temp_script" "$INSTALLER_CMD"
+        print_success "paqet-tunnel command installed successfully!"
+    else
+        # If download fails, copy current script
+        print_warning "Could not download latest version, installing current script..."
+        
+        # Get the path of the currently running script
+        local current_script="${BASH_SOURCE[0]}"
+        if [ -f "$current_script" ]; then
+            cp "$current_script" "$INSTALLER_CMD"
+            chmod +x "$INSTALLER_CMD"
+            print_success "paqet-tunnel command installed from local script!"
+        else
+            # If running from curl pipe, save from stdin
+            print_info "Saving script from current execution..."
+            # Re-download or use $0
+            if [ -f "$0" ]; then
+                cp "$0" "$INSTALLER_CMD"
+                chmod +x "$INSTALLER_CMD"
+                print_success "paqet-tunnel command installed!"
+            else
+                print_error "Could not determine script source"
+                print_info "Please run: curl -fsSL $download_url -o $INSTALLER_CMD && chmod +x $INSTALLER_CMD"
+                return 1
+            fi
+        fi
+    fi
+    
+    echo ""
+    echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}         paqet-tunnel command installed!                    ${NC}"
+    echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo -e "  You can now run: ${CYAN}paqet-tunnel${NC}"
+    echo ""
+    echo -e "  Location: ${CYAN}$INSTALLER_CMD${NC}"
+    echo ""
+}
+
+uninstall_command() {
+    if [ -f "$INSTALLER_CMD" ]; then
+        rm -f "$INSTALLER_CMD"
+        print_success "paqet-tunnel command removed from $INSTALLER_CMD"
+    else
+        print_info "paqet-tunnel command is not installed"
+    fi
+}
+
+is_command_installed() {
+    [ -f "$INSTALLER_CMD" ]
+}
+
+#===============================================================================
 # Main Menu
 #===============================================================================
 
@@ -1688,6 +1769,14 @@ main() {
     
     while true; do
         print_banner
+        
+        # Show if command is installed
+        if is_command_installed; then
+            echo -e "${GREEN}[✓] paqet-tunnel command is installed. Run: ${CYAN}paqet-tunnel${NC}"
+        else
+            echo -e "${YELLOW}[i] Tip: Install as command with option 'i' to run: ${CYAN}paqet-tunnel${NC}"
+        fi
+        echo ""
         
         echo -e "${YELLOW}Select option:${NC}"
         echo ""
@@ -1704,10 +1793,18 @@ main() {
         echo -e "  ${GREEN}── Maintenance ──${NC}"
         echo -e "  ${CYAN}7)${NC} Check for Updates"
         echo -e "  ${CYAN}8)${NC} Show Port Defaults"
-        echo -e "  ${CYAN}9)${NC} Uninstall"
+        echo -e "  ${CYAN}9)${NC} Uninstall paqet"
+        echo ""
+        echo -e "  ${GREEN}── Script ──${NC}"
+        if is_command_installed; then
+            echo -e "  ${CYAN}i)${NC} Update paqet-tunnel command"
+        else
+            echo -e "  ${CYAN}i)${NC} Install as 'paqet-tunnel' command"
+        fi
+        echo -e "  ${CYAN}r)${NC} Remove paqet-tunnel command"
         echo -e "  ${CYAN}0)${NC} Exit"
         echo ""
-        read -p "Choice [0-9]: " choice < /dev/tty
+        read -p "Choice: " choice < /dev/tty
         
         case $choice in
             1) install_dependencies; setup_server_b ;;
@@ -1719,6 +1816,8 @@ main() {
             7) check_for_updates ;;
             8) show_port_config ;;
             9) uninstall ;;
+            [Ii]) install_command ;;
+            [Rr]) uninstall_command ;;
             0) exit 0 ;;
             *) print_error "Invalid choice" ;;
         esac
