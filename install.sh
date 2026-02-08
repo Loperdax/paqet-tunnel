@@ -2655,6 +2655,13 @@ update_installer() {
                 print_info "Configurations backed up"
             fi
             
+            # Update the installed command if it exists
+            if is_command_installed; then
+                cp "$temp_script" "$INSTALLER_CMD"
+                chmod +x "$INSTALLER_CMD"
+                print_success "Updated paqet-tunnel command at $INSTALLER_CMD"
+            fi
+            
             echo ""
             print_step "Launching updated installer..."
             echo ""
