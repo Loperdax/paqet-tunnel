@@ -2780,6 +2780,18 @@ is_command_installed() {
 main() {
     check_root
     
+    # Auto-sync: if paqet-tunnel command exists but is outdated, update it silently
+    if is_command_installed; then
+        local installed_ver=$(grep '^INSTALLER_VERSION=' "$INSTALLER_CMD" 2>/dev/null | cut -d'"' -f2)
+        if [ -n "$installed_ver" ] && [ "$installed_ver" != "$INSTALLER_VERSION" ]; then
+            local running_script="${BASH_SOURCE[0]}"
+            if [ -f "$running_script" ]; then
+                cp "$running_script" "$INSTALLER_CMD"
+                chmod +x "$INSTALLER_CMD"
+            fi
+        fi
+    fi
+    
     while true; do
         print_banner
         
@@ -2811,9 +2823,7 @@ main() {
         echo -e "  ${CYAN}u)${NC} Uninstall paqet"
         echo ""
         echo -e "  ${GREEN}── Script ──${NC}"
-        if is_command_installed; then
-            echo -e "  ${CYAN}i)${NC} Update paqet-tunnel command"
-        else
+        if ! is_command_installed; then
             echo -e "  ${CYAN}i)${NC} Install as 'paqet-tunnel' command"
         fi
         echo -e "  ${CYAN}r)${NC} Remove paqet-tunnel command"
