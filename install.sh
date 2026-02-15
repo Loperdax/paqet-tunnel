@@ -11,7 +11,7 @@
 set -e
 
 # Configuration
-INSTALLER_VERSION="1.10.0"
+INSTALLER_VERSION="1.11.0"
 PAQET_VERSION="latest"
 PAQET_DIR="/opt/paqet"
 PAQET_CONFIG="$PAQET_DIR/config.yaml"
@@ -24,6 +24,8 @@ AUTO_RESET_TIMER="paqet-auto-reset"
 GITHUB_REPO="hanselime/paqet"
 INSTALLER_REPO="g3ntrix/paqet-tunnel"
 INSTALLER_CMD="/usr/local/bin/paqet-tunnel"
+DONATE_TON="UQCriHkMUa6h9oN059tyC23T13OsQhGGM3hUS2S4IYRBZgvx"
+DONATE_USDT_BEP20="0x71F41696c60C4693305e67eE3Baa650a4E3dA796"
 
 #===============================================================================
 # Default Port Configuration (Easy to change)
@@ -43,24 +45,42 @@ BLUE='\033[0;34m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
 
+print_banner_line() {
+    printf "║ %-45s ║\n" "$1"
+}
+
 print_banner() {
     clear
     echo -e "${MAGENTA}"
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                                                              ║"
-    echo "║     ██████╗  █████╗  ██████╗ ███████╗████████╗               ║"
-    echo "║     ██╔══██╗██╔══██╗██╔═══██╗██╔════╝╚══██╔══╝               ║"
-    echo "║     ██████╔╝███████║██║   ██║█████╗     ██║                  ║"
-    echo "║     ██╔═══╝ ██╔══██║██║▄▄ ██║██╔══╝     ██║                  ║"
-    echo "║     ██║     ██║  ██║╚██████╔╝███████╗   ██║                  ║"
-    echo "║     ╚═╝     ╚═╝  ╚═╝ ╚══▀▀═╝ ╚══════╝   ╚═╝                  ║"
-    echo "║                                                              ║"
-    echo "║          Raw Packet Tunnel - Firewall Bypass                 ║"
-    echo "║                      v${INSTALLER_VERSION}                                  ║"
-    echo "║                                                              ║"
-    echo "║                      Created by g3ntrix                      ║"
-    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo "╔═══════════════════════════════════════════════╗"
+    print_banner_line ""
+    print_banner_line "██████╗  █████╗  ██████╗ ███████╗████████╗   "
+    print_banner_line "██╔══██╗██╔══██╗██╔═══██╗██╔════╝╚══██╔══╝   "
+    print_banner_line "██████╔╝███████║██║   ██║█████╗     ██║      "
+    print_banner_line "██╔═══╝ ██╔══██║██║▄▄ ██║██╔══╝     ██║      "
+    print_banner_line "██║     ██║  ██║╚██████╔╝███████╗   ██║      "
+    print_banner_line "╚═╝     ╚═╝  ╚═╝ ╚══▀▀═╝ ╚══════╝   ╚═╝      "
+    print_banner_line ""
+    print_banner_line "Raw Packet Tunnel - Firewall Bypass"
+    print_banner_line "Version: v${INSTALLER_VERSION}"
+    print_banner_line "Created by g3ntrix"
+    print_banner_line "Support this project: press 'h' in main menu"
+    print_banner_line ""
+    echo "╚═══════════════════════════════════════════════╝"
     echo -e "${NC}"
+}
+show_donate_info() {
+    print_banner
+    echo -e "${YELLOW}Support paqet-tunnel${NC}"
+    echo -e "${CYAN}If this script helps your setup, donations are appreciated.${NC}"
+    echo ""
+    echo -e "${GREEN}TON:${NC}"
+    echo -e "  ${CYAN}${DONATE_TON}${NC}"
+    echo ""
+    echo -e "${GREEN}USDT (BEP20):${NC}"
+    echo -e "  ${CYAN}${DONATE_USDT_BEP20}${NC}"
+    echo ""
+    print_info "Send only TON to TON address and USDT on BEP20 network to BEP20 address."
 }
 
 print_step() { echo -e "${BLUE}[*]${NC} $1"; }
@@ -609,8 +629,8 @@ check_port_conflict() {
                 pkill -9 -f ".*:${port}" 2>/dev/null || true
                 print_success "Process killed"
             else
-                print_error "Cannot continue with port in use"
-                exit 1
+                print_error "Cannot continue with port in use. Please free the port or choose another."
+                return 1
             fi
         fi
     fi
@@ -768,22 +788,26 @@ download_paqet() {
         read -p "> " use_local < /dev/tty
         
         if [[ "$use_local" =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}Enter the filename (or full path):${NC}"
-            read -p "> " user_file < /dev/tty
-            
-            # Check if it's a full path or just filename
-            if [ -f "$user_file" ]; then
-                local_archive="$user_file"
-            elif [ -f "$local_dir/$user_file" ]; then
-                local_archive="$local_dir/$user_file"
-            else
-                print_error "File not found: $user_file"
-                exit 1
-            fi
-            
-            cp "$local_archive" "$temp_archive"
-            download_success=true
-            print_success "Using local file: $local_archive"
+            while true; do
+                echo -e "${YELLOW}Enter the filename (or full path). Press Enter to cancel:${NC}"
+                read -p "> " user_file < /dev/tty
+                [ -z "$user_file" ] && break
+                if [ -f "$user_file" ]; then
+                    local_archive="$user_file"
+                    cp "$local_archive" "$temp_archive"
+                    download_success=true
+                    print_success "Using local file: $local_archive"
+                    break
+                elif [ -f "$local_dir/$user_file" ]; then
+                    local_archive="$local_dir/$user_file"
+                    cp "$local_archive" "$temp_archive"
+                    download_success=true
+                    print_success "Using local file: $local_archive"
+                    break
+                else
+                    print_error "File not found: $user_file. Try again or press Enter to cancel."
+                fi
+            done
         fi
     fi
     
@@ -801,23 +825,26 @@ download_paqet() {
             read -p "> " has_local < /dev/tty
             
             if [[ "$has_local" =~ ^[Yy]$ ]]; then
-                echo -e "${YELLOW}Enter the full path to the paqet tar.gz file:${NC}"
-                echo -e "${CYAN}Example: /root/paqet/paqet-linux-amd64-v1.0.0-alpha.11.tar.gz${NC}"
-                read -p "> " local_archive < /dev/tty
-                
-                if [ -f "$local_archive" ]; then
-                    cp "$local_archive" "$temp_archive"
-                    download_success=true
-                    print_success "Using local file: $local_archive"
-                else
-                    print_error "File not found: $local_archive"
-                    exit 1
-                fi
-            else
+                while true; do
+                    echo -e "${YELLOW}Enter the full path to the paqet tar.gz file. Press Enter to cancel:${NC}"
+                    echo -e "${CYAN}Example: /root/paqet/paqet-linux-amd64-v1.0.0-alpha.11.tar.gz${NC}"
+                    read -p "> " local_archive < /dev/tty
+                    [ -z "$local_archive" ] && break
+                    if [ -f "$local_archive" ]; then
+                        cp "$local_archive" "$temp_archive"
+                        download_success=true
+                        print_success "Using local file: $local_archive"
+                        break
+                    else
+                        print_error "File not found: $local_archive. Try again or press Enter to cancel."
+                    fi
+                done
+            fi
+            if [ "$download_success" = false ]; then
                 print_info "Please download manually from: https://github.com/${GITHUB_REPO}/releases"
                 print_info "Save to: $local_dir/"
-                print_info "Then run this installer again"
-                exit 1
+                print_info "Then run this installer again (you will return to the main menu now)."
+                return 1
             fi
         fi
     fi
@@ -827,7 +854,7 @@ download_paqet() {
         tar -xzf "$temp_archive" -C "$PAQET_DIR" 2>/dev/null || {
             print_error "Failed to extract archive"
             rm -f "$temp_archive"
-            exit 1
+            return 1
         }
         
         # The extracted binary is named paqet_<os>_<arch>, rename it to paqet
@@ -844,8 +871,11 @@ download_paqet() {
             print_info "Expected: $extracted_binary"
             ls -la "$PAQET_DIR"
             rm -f "$temp_archive"
-            exit 1
+            return 1
         fi
+    fi
+    if [ "$download_success" != true ]; then
+        return 1
     fi
 }
 
@@ -926,6 +956,215 @@ save_iptables() {
     fi
 }
 
+#===============================================================================
+# IPTables NAT Port Forwarding
+# Kernel-level port forwarding via iptables NAT rules.
+# Useful for independently managing which ports go to which destination,
+# testing backup tunnels without service restarts, and relay setups.
+#===============================================================================
+
+ensure_ip_forwarding() {
+    local current=$(sysctl -n net.ipv4.ip_forward 2>/dev/null)
+    if [ "$current" != "1" ]; then
+        print_step "Enabling IP forwarding..."
+        echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/30-ip_forward.conf
+        sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1
+        sysctl --system > /dev/null 2>&1
+        print_success "IP forwarding enabled"
+    fi
+}
+
+add_nat_forward_multi_port() {
+    echo ""
+    echo -e "${YELLOW}Multi-Port NAT Forward${NC}"
+    echo -e "${CYAN}Forward specific ports (TCP+UDP) to a destination server via iptables NAT${NC}"
+    echo ""
+    
+    local dest_ip
+    while true; do
+        echo -e "${YELLOW}Enter destination server IP (e.g. 1.2.3.4). Press Enter to cancel:${NC}"
+        read -p "> " dest_ip < /dev/tty
+        [ -z "$dest_ip" ] && { print_info "Cancelled."; return 0; }
+        if [[ "$dest_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            break
+        fi
+        print_error "Invalid IP address format. Try again or press Enter to cancel."
+    done
+    
+    local ports
+    while true; do
+        echo -e "${YELLOW}Enter ports to forward (comma-separated, e.g. 443,8443,2053). Press Enter to cancel:${NC}"
+        read -p "> " ports < /dev/tty
+        [ -z "$ports" ] && { print_info "Cancelled."; return 0; }
+        ports=$(echo "$ports" | tr -d ' ')
+        if [[ "$ports" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+            break
+        fi
+        print_error "Invalid port format. Use comma-separated numbers (e.g. 443,8443). Try again or press Enter to cancel."
+    done
+    
+    ensure_ip_forwarding
+    
+    print_step "Adding NAT forwarding rules: ports $ports -> $dest_ip ..."
+    
+    # TCP
+    iptables -t nat -A PREROUTING -p tcp --match multiport --dports $ports -j DNAT --to-destination $dest_ip
+    iptables -t nat -A POSTROUTING -p tcp --match multiport --dports $ports -j MASQUERADE
+    # UDP
+    iptables -t nat -A PREROUTING -p udp --match multiport --dports $ports -j DNAT --to-destination $dest_ip
+    iptables -t nat -A POSTROUTING -p udp --match multiport --dports $ports -j MASQUERADE
+    
+    save_iptables
+    print_success "NAT forwarding added: ports $ports -> $dest_ip (TCP+UDP)"
+}
+
+add_nat_forward_all_ports() {
+    echo ""
+    echo -e "${YELLOW}All-Ports NAT Forward${NC}"
+    echo -e "${CYAN}Forward ALL ports to a destination, except specified exclusions${NC}"
+    echo ""
+    
+    local relay_ip
+    while true; do
+        echo -e "${YELLOW}Enter THIS server's IP (relay IP). Press Enter to cancel:${NC}"
+        read -p "> " relay_ip < /dev/tty
+        [ -z "$relay_ip" ] && { print_info "Cancelled."; return 0; }
+        if [[ "$relay_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            break
+        fi
+        print_error "Invalid IP address format. Try again or press Enter to cancel."
+    done
+    
+    local dest_ip
+    while true; do
+        echo -e "${YELLOW}Enter destination server IP. Press Enter to cancel:${NC}"
+        read -p "> " dest_ip < /dev/tty
+        [ -z "$dest_ip" ] && { print_info "Cancelled."; return 0; }
+        if [[ "$dest_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            break
+        fi
+        print_error "Invalid IP address format. Try again or press Enter to cancel."
+    done
+    
+    local exclude_ports
+    while true; do
+        echo -e "${YELLOW}Enter ports to EXCLUDE (comma-separated, e.g. 22,80). Press Enter to cancel:${NC}"
+        read -p "> " exclude_ports < /dev/tty
+        [ -z "$exclude_ports" ] && { print_info "Cancelled."; return 0; }
+        exclude_ports=$(echo "$exclude_ports" | tr -d ' ')
+        if [[ "$exclude_ports" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+            break
+        fi
+        print_error "Invalid port format. Use comma-separated numbers (e.g. 22,80). Try again or press Enter to cancel."
+    done
+    
+    # Warn about SSH
+    if ! echo ",$exclude_ports," | grep -q ",22,"; then
+        print_warning "Port 22 (SSH) is NOT in your exclusion list!"
+        echo -e "${RED}You may lose SSH access if port 22 is forwarded.${NC}"
+        read_confirm "Continue without excluding port 22?" skip_ssh_warn "n"
+        if [ "$skip_ssh_warn" != true ]; then
+            print_info "Cancelled. Add port 22 to your exclusion list."
+            return 1
+        fi
+    fi
+    
+    ensure_ip_forwarding
+    
+    print_step "Adding all-ports NAT forwarding to $dest_ip (excluding $exclude_ports)..."
+    
+    # First: redirect excluded ports back to this server (keeps them local)
+    iptables -t nat -A PREROUTING -p tcp --match multiport --dports $exclude_ports -j DNAT --to-destination $relay_ip
+    iptables -t nat -A PREROUTING -p udp --match multiport --dports $exclude_ports -j DNAT --to-destination $relay_ip
+    # Then: catch-all forward everything else to destination
+    iptables -t nat -A PREROUTING -p tcp -j DNAT --to-destination $dest_ip
+    iptables -t nat -A PREROUTING -p udp -j DNAT --to-destination $dest_ip
+    iptables -t nat -A POSTROUTING -j MASQUERADE
+    
+    save_iptables
+    print_success "All-ports NAT forwarding added to $dest_ip (excluding $exclude_ports)"
+}
+
+view_nat_rules() {
+    echo ""
+    echo -e "${YELLOW}Current NAT Table Rules:${NC}"
+    echo -e "${GREEN}─────────────────────────────────────────────────────────────${NC}"
+    iptables -t nat -L -v --line-numbers 2>/dev/null || print_error "Failed to read NAT rules"
+    echo -e "${GREEN}─────────────────────────────────────────────────────────────${NC}"
+}
+
+remove_nat_forward_by_dest() {
+    echo ""
+    echo -e "${YELLOW}Remove NAT Forwarding Rules by Destination${NC}"
+    echo ""
+    
+    view_nat_rules
+    echo ""
+    
+    echo -e "${YELLOW}Enter destination IP to remove rules for. Press Enter to cancel:${NC}"
+    read -p "> " dest_ip < /dev/tty
+    if [ -z "$dest_ip" ]; then
+        print_info "Cancelled."
+        return 0
+    fi
+    
+    print_step "Removing NAT rules targeting $dest_ip..."
+    
+    local removed=0
+    
+    # Remove PREROUTING rules targeting this IP (reverse order to preserve line numbers)
+    local pre_rules
+    pre_rules=$(iptables -t nat -L PREROUTING --line-numbers -n 2>/dev/null | grep "to:${dest_ip}" | awk '{print $1}' | sort -rn)
+    for num in $pre_rules; do
+        iptables -t nat -D PREROUTING $num 2>/dev/null && removed=$((removed + 1))
+    done
+    
+    # Remove POSTROUTING rules that reference this IP (if any)
+    local post_rules
+    post_rules=$(iptables -t nat -L POSTROUTING --line-numbers -n 2>/dev/null | grep "to:${dest_ip}" | awk '{print $1}' | sort -rn)
+    for num in $post_rules; do
+        iptables -t nat -D POSTROUTING $num 2>/dev/null && removed=$((removed + 1))
+    done
+    
+    if [ $removed -gt 0 ]; then
+        save_iptables
+        print_success "Removed $removed NAT rule(s) targeting $dest_ip"
+        print_info "POSTROUTING MASQUERADE rules (which don't reference a specific IP) may remain."
+        print_info "Use 'View NAT Rules' to verify, or 'Flush All' for a clean slate."
+    else
+        print_warning "No NAT rules found targeting $dest_ip"
+    fi
+}
+
+flush_nat_rules() {
+    echo ""
+    echo -e "${RED}WARNING: This will flush ALL iptables NAT rules!${NC}"
+    echo -e "${YELLOW}Connection protection rules (raw/mangle) will NOT be affected.${NC}"
+    echo ""
+    
+    read_confirm "Flush all NAT rules?" do_flush "n"
+    
+    if [ "$do_flush" = true ]; then
+        print_step "Flushing NAT table..."
+        iptables -t nat -F
+        iptables -t nat -X 2>/dev/null || true
+        
+        save_iptables
+        print_success "All NAT rules flushed"
+        
+        echo ""
+        read_confirm "Also disable IP forwarding?" disable_fwd "n"
+        if [ "$disable_fwd" = true ]; then
+            echo "net.ipv4.ip_forward=0" > /etc/sysctl.d/30-ip_forward.conf
+            sysctl -w net.ipv4.ip_forward=0 > /dev/null 2>&1
+            sysctl --system > /dev/null 2>&1
+            print_success "IP forwarding disabled"
+        fi
+    else
+        print_info "Flush cancelled"
+    fi
+}
+
 create_systemd_service() {
     print_step "Creating systemd service..."
     
@@ -998,7 +1237,7 @@ setup_server_b() {
     read_port "paqet listen port" PAQET_PORT "$DEFAULT_PAQET_PORT"
     
     # Check port conflict
-    check_port_conflict "$PAQET_PORT"
+    check_port_conflict "$PAQET_PORT" || return 0
     
     # V2Ray ports to forward (with validation)
     echo ""
@@ -1012,7 +1251,7 @@ setup_server_b() {
     read_required "Secret key (press Enter to use generated)" secret_key "$secret_key"
     
     # Download paqet
-    download_paqet
+    download_paqet || return 0
     
     # Setup iptables
     setup_iptables "$PAQET_PORT"
@@ -1159,12 +1398,12 @@ setup_server_a() {
     IFS=',' read -ra PORTS <<< "$FORWARD_PORTS"
     for port in "${PORTS[@]}"; do
         port=$(echo "$port" | tr -d ' ')
-        check_port_conflict "$port"
+        check_port_conflict "$port" || return 0
     done
     
     # Download paqet (only if binary doesn't exist yet)
     if [ ! -f "$PAQET_BIN" ]; then
-        download_paqet
+        download_paqet || return 0
     else
         print_success "paqet binary already installed"
     fi
@@ -1663,7 +1902,7 @@ change_paqet_port_server() {
     fi
     
     # Check port conflict
-    check_port_conflict "$NEW_PORT"
+    check_port_conflict "$NEW_PORT" || return 0
     
     # Update listen section
     sed -i "s/addr: \":[0-9]*\"/addr: \":${NEW_PORT}\"/" "$PAQET_CONFIG"
@@ -2684,6 +2923,55 @@ apply_connection_protection() {
     echo ""
 }
 
+#===============================================================================
+# IPTables Port Forwarding Menu
+#===============================================================================
+
+iptables_port_forwarding_menu() {
+    while true; do
+        print_banner
+        echo -e "${YELLOW}IPTables NAT Port Forwarding${NC}"
+        echo -e "${CYAN}Forward traffic to another server using iptables NAT rules${NC}"
+        echo -e "${CYAN}Each rule set is independent — useful for testing backup tunnels${NC}"
+        echo ""
+        
+        # Quick status: show if IP forwarding is enabled
+        local fwd_status=$(sysctl -n net.ipv4.ip_forward 2>/dev/null)
+        if [ "$fwd_status" = "1" ]; then
+            echo -e "  ${GREEN}[✓] IP forwarding is enabled${NC}"
+        else
+            echo -e "  ${YELLOW}[—] IP forwarding is disabled${NC}"
+        fi
+        
+        local nat_count=$(iptables -t nat -L PREROUTING -n 2>/dev/null | grep -c "DNAT" || echo "0")
+        echo -e "  ${CYAN}Active DNAT rules: ${nat_count}${NC}"
+        echo ""
+        
+        echo -e "  ${CYAN}1)${NC} Multi-Port Forward (specific ports -> destination)"
+        echo -e "  ${CYAN}2)${NC} All-Ports Forward (all except excluded -> destination)"
+        echo -e "  ${CYAN}3)${NC} View NAT Rules"
+        echo -e "  ${CYAN}4)${NC} Remove Forwarding by Destination IP"
+        echo -e "  ${CYAN}5)${NC} Flush All NAT Rules"
+        echo -e "  ${CYAN}0)${NC} Back"
+        echo ""
+        read -p "Choice: " fwd_choice < /dev/tty
+        
+        case $fwd_choice in
+            1) add_nat_forward_multi_port ;;
+            2) add_nat_forward_all_ports ;;
+            3) view_nat_rules ;;
+            4) remove_nat_forward_by_dest ;;
+            5) flush_nat_rules ;;
+            0) return ;;
+            *) print_error "Invalid choice" ;;
+        esac
+        
+        echo ""
+        echo -e "${YELLOW}Press Enter to continue...${NC}"
+        read < /dev/tty
+    done
+}
+
 # Auto-reset menu
 auto_reset_menu() {
     while true; do
@@ -3045,6 +3333,7 @@ main() {
         echo -e "  ${CYAN}9)${NC} Show Port Defaults"
         echo -e "  ${CYAN}a)${NC} Automatic Reset (scheduled restart)"
         echo -e "  ${CYAN}d)${NC} Connection Protection & MTU Tuning (fix fake RST/disconnects)"
+        echo -e "  ${CYAN}f)${NC} IPTables Port Forwarding (relay/NAT)"
         echo -e "  ${CYAN}u)${NC} Uninstall paqet"
         echo ""
         echo -e "  ${GREEN}── Script ──${NC}"
@@ -3052,6 +3341,7 @@ main() {
             echo -e "  ${CYAN}i)${NC} Install as 'paqet-tunnel' command"
         fi
         echo -e "  ${CYAN}r)${NC} Remove paqet-tunnel command"
+        echo -e "  ${CYAN}h)${NC} Donate / Support project"
         echo -e "  ${CYAN}0)${NC} Exit"
         echo ""
         read -p "Choice: " choice < /dev/tty
@@ -3068,9 +3358,11 @@ main() {
             9) show_port_config ;;
             [Aa]) auto_reset_menu ;;
             [Dd]) apply_connection_protection ;;
+            [Ff]) iptables_port_forwarding_menu ;;
             [Uu]) uninstall ;;
             [Ii]) install_command ;;
             [Rr]) uninstall_command ;;
+            [Hh]) show_donate_info ;;
             0) exit 0 ;;
             *) print_error "Invalid choice" ;;
         esac

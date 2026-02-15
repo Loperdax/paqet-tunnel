@@ -2,9 +2,12 @@
 
 Easy installer for tunneling VPN traffic through a middle server using [paqet](https://github.com/hanselime/paqet) - a raw packet-level tunneling tool that bypasses network restrictions.
 
-**Current Version:** v1.10.0
+**Current Version:** v1.11.0
 
 ## Changelog
+
+### v1.11.0
+- **IPTables Port Forwarding** - New menu option (**f**) under Maintenance: kernel-level NAT port forwarding (multi-port, all-ports with exclusions, view/remove/flush). Enables segregated port management and testing backup tunnels without service restarts.
 
 ### v1.10.0
 - **Connection Protection & MTU Tuning** - New menu option (**d**) under Maintenance to apply iptables rules that:
@@ -324,6 +327,9 @@ The installer provides a full management interface:
 ── Maintenance ──
 8) Check for Updates
 9) Show Port Defaults
+a) Automatic Reset (scheduled restart)
+d) Connection Protection & MTU Tuning (fix fake RST/disconnects)
+f) IPTables Port Forwarding (relay/NAT)
 u) Uninstall paqet
 
 ── Script ──
@@ -331,6 +337,24 @@ i) Install as 'paqet-tunnel' command
 r) Remove paqet-tunnel command
 0) Exit
 ```
+
+### IPTables Port Forwarding (Option f)
+
+Forward traffic to another server using kernel-level iptables NAT rules. This is independent of paqet's built-in port forwarding and is especially useful for:
+
+- **Testing backup tunnels** without stopping/restarting the primary tunnel
+- **Relay setups** where Server A forwards traffic at the IP level
+- **Segregated port management** where each destination has its own set of rules
+
+Submenu options:
+
+- **Multi-Port Forward** - Forward specific ports (TCP+UDP) to a destination IP via DNAT
+- **All-Ports Forward** - Forward all traffic except excluded ports (e.g., SSH) to a destination
+- **View NAT Rules** - Display current iptables NAT table with line numbers
+- **Remove Forwarding by Destination** - Remove all NAT rules targeting a specific IP
+- **Flush All NAT Rules** - Clear all NAT rules (does not affect connection protection rules)
+
+The menu also shows a quick status: whether IP forwarding is enabled and how many active DNAT rules exist.
 
 ### Manage Tunnels (Option 6)
 
