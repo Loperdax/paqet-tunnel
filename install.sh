@@ -24,8 +24,8 @@ AUTO_RESET_TIMER="paqet-auto-reset"
 GITHUB_REPO="hanselime/paqet"
 INSTALLER_REPO="loperdax/paqet-tunnel"
 INSTALLER_CMD="/usr/local/bin/paqet-tunnel"
-DONATE_TON="UQCriHkMUa6h9oN059tyC23T13OsQhGGM3hUS2S4IYRBZgvx"
-DONATE_USDT_BEP20="0x71F41696c60C4693305e67eE3Baa650a4E3dA796"
+DONATE_TON=".."
+DONATE_USDT_BEP20=".."
 
 #===============================================================================
 # Default Port Configuration (Easy to change)
