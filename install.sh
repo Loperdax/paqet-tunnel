@@ -3,7 +3,7 @@
 #  paqet Tunnel Installer
 #  Raw packet-level tunneling for bypassing network restrictions
 #  
-#  Usage: bash <(curl -fsSL https://raw.githubusercontent.com/g3ntrix/paqet-tunnel/main/install.sh)
+#  Usage: bash <(curl -fsSL https://raw.githubusercontent.com/loperdax/paqet-tunnel/main/install.sh)
 #  
 #  This script downloads paqet binary from: https://github.com/hanselime/paqet
 #===============================================================================
@@ -22,7 +22,7 @@ AUTO_RESET_SCRIPT="$PAQET_DIR/auto-reset.sh"
 AUTO_RESET_SERVICE="paqet-auto-reset"
 AUTO_RESET_TIMER="paqet-auto-reset"
 GITHUB_REPO="hanselime/paqet"
-INSTALLER_REPO="g3ntrix/paqet-tunnel"
+INSTALLER_REPO="loperdax/paqet-tunnel"
 INSTALLER_CMD="/usr/local/bin/paqet-tunnel"
 DONATE_TON="UQCriHkMUa6h9oN059tyC23T13OsQhGGM3hUS2S4IYRBZgvx"
 DONATE_USDT_BEP20="0x71F41696c60C4693305e67eE3Baa650a4E3dA796"
@@ -63,7 +63,7 @@ print_banner() {
     print_banner_line ""
     print_banner_line "Raw Packet Tunnel - Firewall Bypass"
     print_banner_line "Version: v${INSTALLER_VERSION}"
-    print_banner_line "Created by g3ntrix"
+    print_banner_line "Created by loperdax"
     print_banner_line "Support this project: press 'h' in main menu"
     print_banner_line ""
     echo "╚═══════════════════════════════════════════════╝"
@@ -3127,7 +3127,7 @@ check_for_updates() {
     if [ "$INSTALLER_VERSION" = "$latest_version" ]; then
         echo ""
         echo -e "${YELLOW}Check out my latest tunnel project (SMTP-based):${NC}"
-        echo -e "  ${CYAN}https://github.com/g3ntrix/smtp-tunnel${NC}"
+        echo -e "  ${CYAN}https://github.com/loperdax/smtp-tunnel${NC}"
         echo ""
         print_success "You are running the latest version!"
         return 0
@@ -3180,7 +3180,7 @@ update_installer() {
             
             echo ""
             echo -e "${YELLOW}Check out my latest tunnel project (SMTP-based):${NC}"
-            echo -e "  ${CYAN}https://github.com/g3ntrix/smtp-tunnel${NC}"
+            echo -e "  ${CYAN}https://github.com/loperdax/smtp-tunnel${NC}"
             echo ""
             print_step "Launching updated installer..."
             echo ""
